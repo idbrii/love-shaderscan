@@ -10,6 +10,7 @@ local ShaderScan = class('shaderscan')
 function ShaderScan:init()
     self._shaders = {}
     self.s = {}
+    self.fails = {}
 end
 
 local function lastmodified(filepath)
@@ -56,6 +57,20 @@ function ShaderScan:update(dt)
             end
         end
     end
+end
+
+-- Normally, you can call send on your own, but safe_send lets you ignore
+-- errors from variables that get optimized away.
+function ShaderScan:safe_send(shader, var, value)
+    local success, msg = xpcall(function()
+        self.s[shader]:send(var, value)
+    end, debug.traceback)
+    if not success and not self.fails[shader] then
+        -- Reformat to match my vim 'errorformat'
+        local repl = (": in '%s': "):format(shader)
+        print(msg:gsub(": ", repl, 1))
+    end
+    self.fails[shader] = not success or nil
 end
 
 return ShaderScan
