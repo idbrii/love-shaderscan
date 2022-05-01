@@ -63,6 +63,21 @@ local function _unsafe_perform_load(s, modified_time)
     s.shader = love.graphics.newShader(table.concat(s.shader_lines , "\n"))
 end
 
+function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
+    local s = self._shaders[key]
+    local success,err = pcall(_unsafe_perform_load, s, new_modified)
+    if success then
+        print("Shader reload success:", key)
+        self.s[key] = s.shader
+    else
+        -- Reformat to match my vim 'errorformat'
+        local fmt = ("%s(%%1,0) in "):format(s.filepath)
+        err = err:gsub("Line (%d+):", fmt)
+        err = ("Loading '%s' failed: %s\nFile was: %s"):format(key, err, s.filepath)
+        on_error_fn(err)
+    end
+end
+
 function ShaderScan:load_shader(name, filepath, debug_options)
     local s = {
         filepath = filepath,
@@ -70,7 +85,7 @@ function ShaderScan:load_shader(name, filepath, debug_options)
         dbg = debug_options or {},
     }
     self._shaders[name] = s
-    _unsafe_perform_load(s, s.lastmodified)
+    self:_safe_perform_load(name, s.lastmodified, error)
     self.s[name] = s.shader
     return s.shader
 end
@@ -79,16 +94,7 @@ function ShaderScan:update(dt)
     for key,s in pairs(self._shaders) do
         local new_modified = lastmodified(s.filepath)
         if s.lastmodified ~= new_modified then
-            local success,err = pcall(_unsafe_perform_load, s, new_modified)
-            if success then
-                print("Shader reload success:", key)
-                self.s[key] = s.shader
-            else
-                -- Reformat to match my vim 'errorformat'
-                local fmt = ("%s(%%1,0) in "):format(s.filepath)
-                err = err:gsub("Line (%d+):", fmt)
-                print("Shader reload failed:", key, err)
-            end
+            self:_safe_perform_load(key, new_modified, print)
         end
     end
 end
