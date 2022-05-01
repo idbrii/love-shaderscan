@@ -35,32 +35,51 @@ local function _process_shader(filepath, already_included)
         error(err)
         return
     end
-    local processed_lines = {}
+    local output = {
+        lines = {},
+        origin_file = {},
+        origin_lnum = {},
+    }
+    local lnum = 0
     for line in f:lines() do
+        lnum = lnum + 1 -- only incremented for f
         local include = line:match('#include "(.*)"')
         if include then
+            output.had_includes = true
             if already_included[include] then
                 line = "// Already included file: ".. include
             else
-                local incl_file = _process_shader(include, already_included)
-                for i,val in ipairs(incl_file) do
-                    table.insert(processed_lines, val)
+                local out_from_incl = _process_shader(include, already_included)
+                for i,val in ipairs(out_from_incl.lines) do
+                    table.insert(output.lines, val)
+                    table.insert(output.origin_file, out_from_incl.origin_file[i])
+                    table.insert(output.origin_lnum,  out_from_incl.origin_lnum[i])
                 end
                 line = "// Included file: ".. include
             end
         end
-        table.insert(processed_lines, line)
+        table.insert(output.lines, line)
+        table.insert(output.origin_file, filepath)
+        table.insert(output.origin_lnum, lnum)
     end
-    return processed_lines
+    return output
 end
 
 local function _unsafe_perform_load(s, modified_time)
     -- always update lastmodified so we don't retry loading bad file.
     s.lastmodified = modified_time
-    s.shader_lines = _process_shader(s.filepath, {})
-    --~ print(table.concat(s.shader_lines , "\n"))
+    s.shader_content = _process_shader(s.filepath, {})
+    --~ print(table.concat(s.shader_content.lines , "\n"))
+    assert(#s.shader_content.lines > 0)
+    assert(type(s.shader_content.lines[1]) == "string")
     -- newShader may throw exception
-    s.shader = love.graphics.newShader(table.concat(s.shader_lines , "\n"))
+    s.shader = love.graphics.newShader(table.concat(s.shader_content.lines , "\n"))
+end
+
+local function _get_fileline(shader_content, lnum)
+    local origin_file = shader_content.origin_file[lnum]
+    local origin_lnum = shader_content.origin_lnum[lnum]
+    return ("\t%s:%d: in shader"):format(origin_file, origin_lnum)
 end
 
 function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
@@ -71,9 +90,23 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
         self.s[key] = s.shader
     else
         -- Reformat to match my vim 'errorformat'
-        local fmt = ("%s(%%1,0) in "):format(s.filepath)
-        err = err:gsub("Line (%d+):", fmt)
-        err = ("Loading '%s' failed: %s\nFile was: %s"):format(key, err, s.filepath)
+        local lnum = err:match("Line (%d+):")
+        local line = ""
+        if lnum then
+            lnum = tonumber(lnum)
+            assert(lnum, err)
+            local fileline
+            if s.shader_content.had_includes then
+                fileline = _get_fileline(s.shader_content, lnum)
+            else
+                -- TODO: why was I using this format?
+                fileline = ("%s(%d,0) in "):format(s.filepath, lnum)
+            end
+            err = err:gsub("Line (%d+):", fileline)
+            line = "\nLine:\n".. s.shader_content.lines[lnum]
+        end
+
+        err = ("Loading '%s' failed: %s\nFile: %s%s"):format(key, err, s.filepath, line)
         on_error_fn(err)
     end
 end
