@@ -5,6 +5,9 @@ local class = require "gabe.class"
 --
 -- Consider using cargo and moving this code into there (so all assets can be
 -- hotloaded).
+--
+-- Supports #include directives that use the same path names you'd pass to
+-- love.filesystem.newFile (project root relative).
 local ShaderScan = class('shaderscan')
 
 function ShaderScan:init()
@@ -22,21 +25,52 @@ local function lastmodified(filepath)
     end
 end
 
+local function _process_shader(filepath, already_included)
+    assert(not already_included[filepath], "Circular include: ".. filepath)
+    already_included[filepath] = true
+    local f = love.filesystem.newFile(filepath)
+    local ok, err = f:open('r')
+    if not ok then
+        print(err, filepath)
+        error(err)
+        return
+    end
+    local processed_lines = {}
+    for line in f:lines() do
+        local include = line:match('#include "(.*)"')
+        if include then
+            if already_included[include] then
+                line = "// Already included file: ".. include
+            else
+                local incl_file = _process_shader(include, already_included)
+                for i,val in ipairs(incl_file) do
+                    table.insert(processed_lines, val)
+                end
+                line = "// Included file: ".. include
+            end
+        end
+        table.insert(processed_lines, line)
+    end
+    return processed_lines
+end
+
 local function _unsafe_perform_load(s, modified_time)
     -- always update lastmodified so we don't retry loading bad file.
     s.lastmodified = modified_time
+    s.shader_lines = _process_shader(s.filepath, {})
+    --~ print(table.concat(s.shader_lines , "\n"))
     -- newShader may throw exception
-    s.shader = love.graphics.newShader(s.filepath, unpack(s.args))
+    s.shader = love.graphics.newShader(table.concat(s.shader_lines , "\n"))
 end
 
-function ShaderScan:load_shader(name, filepath, ...)
+function ShaderScan:load_shader(name, filepath, debug_options)
     local s = {
         filepath = filepath,
         lastmodified = lastmodified(filepath),
-        args = {...},
+        dbg = debug_options or {},
     }
     self._shaders[name] = s
-    _unsafe_perform_load(s, lastmodified(filepath))
+    _unsafe_perform_load(s, s.lastmodified)
     self.s[name] = s.shader
     return s.shader
 end
