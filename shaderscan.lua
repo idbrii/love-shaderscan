@@ -1,16 +1,30 @@
-local class = require "gabe.class"
-
-
 -- Hot reload shader code.
---
--- Consider using cargo and moving this code into there (so all assets can be
--- hotloaded).
 --
 -- Supports #include directives that use the same path names you'd pass to
 -- love.filesystem.newFile (project root relative).
+--
+-- Modifies shader compile errors to include file and line number in a similar
+-- format to love's lua errors.
+
+
+-- Bare bones class.
+local function class()
+    local cls = {}
+    cls.__index = cls
+    setmetatable(cls, {
+            __call = function(cls_, ...)
+                local obj = setmetatable({}, cls)
+                obj:ctor(...)
+                return obj
+            end
+        })
+    return cls
+end
+
+
 local ShaderScan = class('shaderscan')
 
-function ShaderScan:init()
+function ShaderScan:ctor()
     self._shaders = {}
     self.s = {}
     self.fails = {}
@@ -73,7 +87,7 @@ local function _unsafe_perform_load(s, modified_time)
     assert(#s.shader_content.lines > 0)
     assert(type(s.shader_content.lines[1]) == "string")
     -- newShader may throw exception
-    s.shader = love.graphics.newShader(table.concat(s.shader_content.lines , "\n"))
+    s.shader = love.graphics.newShader(table.concat(s.shader_content.lines, "\n"))
 end
 
 local function _get_fileline(shader_content, lnum)
