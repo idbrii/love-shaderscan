@@ -55,3 +55,8 @@ Did you try to use includes and get these errors:
 
 Use #include directives and modularize your shader code. All includes are
 relative to your project's root (the location of main.lua).
+
+
+# License
+
+MIT License. See LICENSE.md.
