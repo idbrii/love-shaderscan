@@ -7,15 +7,23 @@ ShaderScan - better iteration with shaders
 * handles circular include dependencies
 * send uniforms to shaders and ignore unused errors
 
-# Reload
+## Reload
 
-If you call ShaderScan.update from love.update, it will watch for changes to
+If you call `ShaderScan.update` from `love.update`, it will watch for changes to
 your shaders and reload them if they've changed. If there are errors,
 ShaderScan will report the errors but keep using the previous version of the
 shader.
 
+```lua
+local ShaderScan = require 'shaderscan'
+shaders = ShaderScan()
+shaders:load_shader('splitcolor', 'shaders/splitcolor.glsl')
+function love.update(dt)
+    shaders:update(dt)
+end
+```
 
-# Better Errors
+## Better Errors
 
 Tired of getting these errors?
 
@@ -46,7 +54,7 @@ Sending a uniform that doesn't exist with ShaderScan.safe_send prints the error
 once, but doesn't fail.
 
 
-# Support `#include`
+## Support `#include`
 
 Did you try to use includes and get these errors:
 
@@ -54,8 +62,13 @@ Did you try to use includes and get these errors:
     Line 5: ERROR: '#include' : must be followed by a header name 
 
 Use #include directives and modularize your shader code. All includes are
-relative to your project's root (the location of main.lua).
+relative to your project's root (the location of main.lua). They're processed
+at runtime and error reporting will report errors in the correct files.
 
+Syntax of includes is similar to C++ or some gl shader compilers:
+```
+#include "example/lib/math.glsl"
+```
 
 # License
 
