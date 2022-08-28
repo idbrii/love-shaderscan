@@ -121,6 +121,9 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
         end
 
         err = ("Loading '%s' failed: %s\nFile: %s%s"):format(key, err, s.filepath, line)
+        if s.dbg.dump_file_on_error then
+            print(table.concat(s.shader_content.lines, "\n"))
+        end
         on_error_fn(err)
     end
 end
