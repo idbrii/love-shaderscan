@@ -93,7 +93,7 @@ end
 local function _get_fileline(shader_content, lnum)
     local origin_file = shader_content.origin_file[lnum]
     local origin_lnum = shader_content.origin_lnum[lnum]
-    return ("\t%s:%d: in shader"):format(origin_file, origin_lnum)
+    return origin_file, origin_lnum
 end
 
 function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
@@ -109,15 +109,14 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
         if lnum then
             lnum = tonumber(lnum)
             assert(lnum, err)
-            local fileline
-            if s.shader_content.had_includes then
-                fileline = _get_fileline(s.shader_content, lnum)
-            else
-                -- TODO: why was I using this format?
-                fileline = ("%s(%d,0) in "):format(s.filepath, lnum)
-            end
-            err = err:gsub("Line (%d+):", fileline)
             line = "\nLine:\n".. s.shader_content.lines[lnum]
+
+            local file = s.filepath
+            if s.shader_content.had_includes then
+                file, lnum = _get_fileline(s.shader_content, lnum)
+            end
+            local fileline = ("%s:%i: in '%s'"):format(file, lnum, key)
+            err = err:gsub("Line (%d+):", fileline)
         end
 
         err = ("Loading '%s' failed: %s\nFile: %s%s"):format(key, err, s.filepath, line)
