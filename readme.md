@@ -5,7 +5,9 @@ ShaderScan - better iteration with shaders
 * reloads shaders when they're saved
 * include shaders into other shaders
 * handles circular include dependencies
+* output correct filename and line number in errors
 * send uniforms to shaders and ignore unused errors
+
 
 ## Reload
 
@@ -54,7 +56,7 @@ Sending a uniform that doesn't exist with `ShaderScan.safe_send` prints the erro
 once, but doesn't fail.
 
 
-## Support `#include`
+## Adds `#include`
 
 Ever try to use includes and get these errors:
 
