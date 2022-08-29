@@ -24,5 +24,5 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
     float cycle_duration = 10.0;
     float progress = screen_coords.x / love_ScreenSize.x;
     return mix(left, right, smoothstep01(progress))
-        + overlay * pingpong(iTime / cycle_duration);
+        + overlay * pingpong01(iTime / cycle_duration);
 }

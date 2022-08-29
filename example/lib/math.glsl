@@ -22,9 +22,10 @@ float smoothstep01(in float x)
     return smoothstep(0.0, 1.0, x);
 }
 
-// x bouncing back and forth between 0 and 1.
-float pingpong(float x)
+float pingpong01(float x)
 {
-    return 1.0 - abs(1.0 - mod(x, 2.0));
+    // Introduce a typo and you'll get an error pointing to this file.
+    //~ retur 1.0;
+    return 1.0 - abs(1.0 - mod(x, 2));
 }
 
