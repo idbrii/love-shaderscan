@@ -96,12 +96,12 @@ local function _get_fileline(shader_content, lnum)
     return origin_file, origin_lnum
 end
 
-function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
-    local s = self._shaders[key]
+function ShaderScan:_safe_perform_load(id, new_modified, on_error_fn)
+    local s = self._shaders[id]
     local success,err = pcall(_unsafe_perform_load, s, new_modified)
     if success then
-        print("Shader reload success:", key)
-        self.s[key] = s.shader
+        print("Shader reload success:", id)
+        self.s[id] = s.shader
     else
         -- Reformat to match my vim 'errorformat'
         local lnum = err:match("Line (%d+):")
@@ -115,11 +115,11 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
             if s.shader_content.had_includes then
                 file, lnum = _get_fileline(s.shader_content, lnum)
             end
-            local fileline = ("%s:%i: in '%s'"):format(file, lnum, key)
+            local fileline = ("%s:%i: in '%s'"):format(file, lnum, id)
             err = err:gsub("Line (%d+):", fileline)
         end
 
-        err = ("Loading '%s' failed: %s"):format(key, err)
+        err = ("Loading '%s' failed: %s"):format(id, err)
         if not s.dbg.terse_error_msg then
             err = err .. ("\nFile: %s%s"):format(s.filepath, line)
         end
@@ -131,9 +131,9 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
 end
 
 ---
--- Load a shader file with the given name and filepath. Only supports loading
+-- Load a shader file with the given id and filepath. Only supports loading
 -- from files.
--- Use the name to access the shader: love.graphics.setShader(shaderscan.s[name])
+-- Use the id to access the shader: love.graphics.setShader(shaderscan.s[id])
 --
 -- debug_options = {
 --     -- Output shader file with expanded includes when compile fails.
@@ -141,40 +141,40 @@ end
 --     -- Omit repeated file name and line text on error.
 --     terse_error_msg = true
 -- }
-function ShaderScan:load_shader(name, filepath, debug_options)
+function ShaderScan:load_shader(id, filepath, debug_options)
     local s = {
         filepath = filepath,
         lastmodified = lastmodified(filepath),
         dbg = debug_options or {},
     }
-    self._shaders[name] = s
-    self:_safe_perform_load(name, s.lastmodified, error)
-    self.s[name] = s.shader
+    self._shaders[id] = s
+    self:_safe_perform_load(id, s.lastmodified, error)
+    self.s[id] = s.shader
     return s.shader
 end
 
 function ShaderScan:update(dt)
-    for key,s in pairs(self._shaders) do
+    for id,s in pairs(self._shaders) do
         local new_modified = lastmodified(s.filepath)
         if s.lastmodified ~= new_modified then
-            self:_safe_perform_load(key, new_modified, print)
+            self:_safe_perform_load(id, new_modified, print)
         end
     end
 end
 
 -- Normally, you can call send on your own, but safe_send lets you ignore
 -- errors from variables that get optimized away.
-function ShaderScan:safe_send(shader, var, value)
-    self.fails[shader] = self.fails[shader] or {}
+function ShaderScan:safe_send(id, var, value)
+    self.fails[id] = self.fails[id] or {}
     local success, msg = xpcall(function()
-        self.s[shader]:send(var, value)
+        self.s[id]:send(var, value)
     end, debug.traceback)
-    if not success and not self.fails[shader][var] then
+    if not success and not self.fails[id][var] then
         -- Reformat to match my vim 'errorformat'
-        local repl = (": in '%s': "):format(shader)
+        local repl = (": in '%s': "):format(id)
         print(msg:gsub(": ", repl, 1))
     end
-    self.fails[shader][var] = not success or nil
+    self.fails[id][var] = not success or nil
 end
 
 return ShaderScan
