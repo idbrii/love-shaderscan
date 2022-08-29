@@ -29,9 +29,12 @@ function love.load(args)
     love.window.setMode(screen.x, screen.y)
     shaders = ShaderScan()
     shaders:load_shader('splitcolor', 'example/splitcolor.glsl')
-    -- Also try extra debug options:
+    -- Instead, try extra debug options:
     --~ shaders:load_shader('splitcolor', 'example/splitcolor.glsl', {
+    --~         -- Output shader file when shader compile fails.
     --~         dump_file_on_error = true,
+    --~         -- Omit repeated file name and line text.
+    --~         terse_error_msg = true,
     --~     })
 end
 

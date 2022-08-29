@@ -119,7 +119,10 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
             err = err:gsub("Line (%d+):", fileline)
         end
 
-        err = ("Loading '%s' failed: %s\nFile: %s%s"):format(key, err, s.filepath, line)
+        err = ("Loading '%s' failed: %s"):format(key, err)
+        if not s.dbg.terse_error_msg then
+            err = err .. ("\nFile: %s%s"):format(s.filepath, line)
+        end
         if s.dbg.dump_file_on_error then
             print(table.concat(s.shader_content.lines, "\n"))
         end
@@ -127,6 +130,17 @@ function ShaderScan:_safe_perform_load(key, new_modified, on_error_fn)
     end
 end
 
+---
+-- Load a shader file with the given name and filepath. Only supports loading
+-- from files.
+-- Use the name to access the shader: love.graphics.setShader(shaderscan.s[name])
+--
+-- debug_options = {
+--     -- Output shader file with expanded includes when compile fails.
+--     dump_file_on_error = true,
+--     -- Omit repeated file name and line text on error.
+--     terse_error_msg = true
+-- }
 function ShaderScan:load_shader(name, filepath, debug_options)
     local s = {
         filepath = filepath,
