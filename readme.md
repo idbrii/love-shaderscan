@@ -27,14 +27,14 @@ end
 
 Tired of getting these errors?
 
-Bad code without any indication which shader it came from:
+Typo fails without any indication which shader it came from:
 
     Error: Error validating pixel shader code:
     Line 20: ERROR: 'pingpon' : no matching overloaded function found 
     Line 20: ERROR: '' : compilation terminated 
     ERROR: 2 compilation errors.  No code generated.
 
-Sending a uniform that doesn't exist:
+Sending an unused uniform gives a fatal error:
 
     Error: main.lua:42: Shader uniform 'iSinTime' does not exist.
     A common error is to define but not use the variable.
@@ -50,20 +50,20 @@ Instead, get errors with file, line number, and the specific line that failed:
     Line:
             + overlay * pingpon(iTime / cycle_duration);
 
-Sending a uniform that doesn't exist with ShaderScan.safe_send prints the error
+Sending a uniform that doesn't exist with `ShaderScan.safe_send` prints the error
 once, but doesn't fail.
 
 
 ## Support `#include`
 
-Did you try to use includes and get these errors:
+Ever try to use includes and get these errors:
 
     Line 5: ERROR: '#include' : required extension not requested: GL_GOOGLE_include_directive
     Line 5: ERROR: '#include' : must be followed by a header name 
 
-Use #include directives and modularize your shader code. All includes are
+Use `#include` directives and modularize your shader code. All includes are
 relative to your project's root (the location of main.lua). They're processed
-at runtime and error reporting will report errors in the correct files.
+at runtime and error reporting will report the correct file and line number.
 
 Syntax of includes is similar to C++ or some gl shader compilers:
 ```

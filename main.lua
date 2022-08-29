@@ -61,4 +61,6 @@ function love.draw()
     love.graphics.setColor(1, 0, 1, 0.75)
     love.graphics.circle('fill', ball.pos.x, ball.pos.y, ball.size.x, ball.size.y)
     love.graphics.setShader() -- clear
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.print("Modify example/splitcolor.glsl to see these colours change without restarting.")
 end
