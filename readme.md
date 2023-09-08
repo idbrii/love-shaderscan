@@ -1,3 +1,7 @@
+[![Tested on love2d 11.3+
+](https://img.shields.io/badge/L%F6ve-11.3%2B-pink.svg)](https://love2d.org/)
+
+
 ShaderScan - better iteration with shaders
 
 # Features
@@ -7,6 +11,8 @@ ShaderScan - better iteration with shaders
 * handles circular include dependencies
 * output correct filename and line number in errors
 * send uniforms to shaders and ignore unused errors
+
+ShaderScan was developed using LÖVE 11.3, but may work on earlier versions.
 
 
 ## Reload
